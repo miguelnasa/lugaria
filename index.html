@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lugaria: Planea tu viaje</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <h1>Lugaria: Planea tu viaje</h1>
+        </header>
+
+        <!-- Plan Management - AT TOP -->
+        <section class="plan-management card">
+            <div class="card__body">
+                <h3>Gestión de Planes</h3>
+                
+                <div class="trip-basic-info flex gap-16">
+                    <div class="form-group" style="flex: 2;">
+                        <label for="tripName" class="form-label">Nombre del Viaje/Destino</label>
+                        <input type="text" id="tripName" class="form-control" placeholder="Ej: Vacaciones en París">
+                    </div>
+                    <div class="form-group" style="flex: 1;">
+                        <label for="peopleCount" class="form-label">Cantidad de personas:</label>
+                        <input type="number" id="peopleCount" class="form-control" value="1" min="1" step="1">
+                    </div>
+                </div>
+                
+                <div class="plan-actions flex gap-16">
+                    <button type="button" id="savePlan" class="btn btn--primary">Guardar Plan</button>
+                    <button type="button" id="printPlan" class="btn btn--primary">Imprimir Plan</button>
+                </div>
+                
+                <div class="load-plan mt-8">
+                    <h4>Cargar Plan Previo</h4>
+                    <div class="flex gap-8 items-center">
+                        <input type="file" id="loadPlanFile" accept=".xml" class="form-control" style="flex: 1;">
+                        <button type="button" id="loadPlan" class="btn btn--primary">Cargar Plan</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Currency Rates Section - NOW WITH AUTOMATIC UPDATES -->
+        <section class="currency-rates card">
+            <div class="card__body">
+                <h3>Tasas de Cambio (Actualización Automática)</h3>
+                <p class="form-label" style="margin-bottom: 16px; color: var(--color-text-secondary); font-style: italic;">
+                    Las tasas se actualizan automáticamente usando APIs de Google al cargar la página
+                </p>
+                <div class="currency-inputs flex gap-16">
+                    <div class="form-group" style="flex: 1;">
+                        <label for="usdCopRate" class="form-label">USD a COP:</label>
+                        <input type="number" id="usdCopRate" class="form-control" value="4071" min="1" step="0.01">
+                    </div>
+                    <div class="form-group" style="flex: 1;">
+                        <label for="eurCopRate" class="form-label">EUR a COP:</label>
+                        <input type="number" id="eurCopRate" class="form-control" value="4729" min="1" step="0.01">
+                    </div>
+                </div>
+                <button type="button" id="updateRates" class="btn btn--primary">Actualizar Tasas Automáticamente</button>
+            </div>
+        </section>
+
+        <!-- Trip Configuration -->
+        <section class="trip-config card">
+            <div class="card__body">
+                <h3>Configuración de Fechas</h3>
+                <div class="date-range flex gap-16">
+                    <div class="form-group" style="flex: 1;">
+                        <label for="startDate" class="form-label">Fecha de Inicio</label>
+                        <input type="date" id="startDate" class="form-control">
+                    </div>
+                    <div class="form-group" style="flex: 1;">
+                        <label for="endDate" class="form-label">Fecha de Fin</label>
+                        <input type="date" id="endDate" class="form-control">
+                    </div>
+                </div>
+
+                <button type="button" id="generateCalendar" class="btn btn--primary">Generar Calendario</button>
+            </div>
+        </section>
+
+        <!-- Calendar -->
+        <section class="calendar-section">
+            <div id="calendar" class="calendar-container"></div>
+        </section>
+
+        <!-- Financial Summary -->
+        <section class="financial-summary card">
+            <div class="card__body">
+                <h3>Resumen Financiero</h3>
+                <div class="summary-controls mb-8">
+                    <label for="displayCurrency" class="form-label">Mostrar en:</label>
+                    <select id="displayCurrency" class="form-control" style="width: auto; display: inline-block;">
+                        <option value="USD">USD</option>
+                        <option value="EUR">EUR</option>
+                        <option value="COP">COP</option>
+                    </select>
+                </div>
+                <div id="financialBreakdown" class="financial-breakdown"></div>
+            </div>
+        </section>
+    </div>
+
+    <!-- Event Modal -->
+    <div id="eventModal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modalTitle">Agregar Evento</h3>
+                <button type="button" id="closeModal" class="btn btn--secondary btn--sm">×</button>
+            </div>
+            <div class="modal-body">
+                <form id="eventForm">
+                    <input type="hidden" id="eventDate">
+                    <input type="hidden" id="eventIndex">
+                    
+                    <!-- Booking.com URL Extraction Section -->
+                    <div class="booking-extraction-section">
+                        <h4>Extracción de datos de Booking.com</h4>
+                        <div class="form-group">
+                            <label for="bookingUrl" class="form-label">URL de Booking.com (opcional)</label>
+                            <div class="booking-url-container flex gap-8">
+                                <input type="url" id="bookingUrl" class="form-control" placeholder="https://www.booking.com/hotel/do/el-beaterio.html?checkin=2025-07-07&checkout=2025-07-09..." style="flex: 1;">
+                                <button type="button" id="extractBookingData" class="btn btn--primary">Extraer datos de Booking</button>
+                            </div>
+                        </div>
+                        <div id="bookingExtractionResult" class="booking-extraction-result hidden">
+                            <div class="extraction-success">
+                                <h5>✅ Datos extraídos exitosamente:</h5>
+                                <div id="extractedDataSummary" class="extracted-data-summary"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="eventPlace" class="form-label">Lugar</label>
+                        <input type="text" id="eventPlace" class="form-control" required>
+                    </div>
+
+                    <div class="location-fields flex gap-8">
+                        <div class="form-group" style="flex: 1;">
+                            <label for="eventOrigin" class="form-label">Origen (opcional)</label>
+                            <input type="text" id="eventOrigin" class="form-control" placeholder="Ej: Hotel Central">
+                        </div>
+                        <div class="form-group" style="flex: 1;">
+                            <label for="eventDestination" class="form-label">Destino (opcional)</label>
+                            <input type="text" id="eventDestination" class="form-control" placeholder="Ej: Aeropuerto">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="eventStartTime" class="form-label">Hora de Inicio</label>
+                        <input type="time" id="eventStartTime" class="form-control" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Duración</label>
+                        <div class="duration-inputs flex gap-8">
+                            <input type="number" id="eventDuration" class="form-control" min="1" required style="flex: 2;">
+                            <select id="eventDurationUnit" class="form-control" style="flex: 1;">
+                                <option value="Minutos">Minutos</option>
+                                <option value="Horas">Horas</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="eventEndTime" class="form-label">Hora Final (calculada)</label>
+                        <input type="time" id="eventEndTime" class="form-control" readonly>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="eventPrice" class="form-label">Precio</label>
+                        <input type="number" id="eventPrice" class="form-control" min="0" step="0.01" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="eventCurrency" class="form-label">Moneda</label>
+                        <select id="eventCurrency" class="form-control" required>
+                            <option value="USD">USD</option>
+                            <option value="EUR">EUR</option>
+                            <option value="COP">COP</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Tipología</label>
+                        <div class="event-types">
+                            <label class="checkbox-label">
+                                <input type="checkbox" value="Transporte" id="transportCheckbox"> Transporte
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" value="Alimentación"> Alimentación
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" value="Alojamiento" id="alojamientoCheckbox"> Alojamiento
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" value="Servicio"> Servicio
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" value="Evento"> Evento
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" value="Lugar"> Lugar
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Transport Mode Fields (hidden by default) -->
+                    <div id="transportFields" class="transport-fields hidden">
+                        <div class="form-group">
+                            <label for="transportMode" class="form-label">Modo de transporte:</label>
+                            <select id="transportMode" class="form-control">
+                                <option value="driving">Conducir</option>
+                                <option value="walking">Caminar</option>
+                                <option value="bicycling">Bicicleta</option>
+                                <option value="transit">Tránsito</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="estimatedTime" class="form-label">Tiempo estimado:</label>
+                            <input type="text" id="estimatedTime" class="form-control" readonly placeholder="Se calculará automáticamente">
+                        </div>
+                        <div class="form-group">
+                            <button type="button" id="calculateGoogleMaps" class="btn btn--secondary btn--full-width">Calcular Tiempo con Google Maps</button>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="eventComments" class="form-label">Comentarios</label>
+                        <textarea id="eventComments" class="form-control" rows="3" placeholder="Agregue comentarios adicionales sobre este evento..."></textarea>
+                    </div>
+
+                    <div class="modal-actions">
+                        <button type="button" id="cancelEvent" class="btn btn--secondary">Cancelar</button>
+                        <button type="submit" id="submitEvent" class="btn btn--primary">Agregar Evento</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
